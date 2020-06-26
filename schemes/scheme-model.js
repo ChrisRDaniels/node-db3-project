@@ -1,36 +1,65 @@
-const db = require("../data/db-config.js");
+const db = require('../data/dbConfig');
 
-const find = () => {
- return db.select("*").from("schemes");
+module.exports = {
+  find,
+  findById,
+  findSteps,
+  add,
+  addSteps,
+  update,
+  remove,
 };
 
-const findById = id => {
- return db("schemes")
-  .where({ id })
-  .first();
-};
-
-const findSteps = id => {
- return db
-  .select("*")
-  .from("steps")
-  .join("schemes", "steps.scheme_id", "=", "schemes.id")
-  .where("schemes.id", Number(id));
-};
-
-const add = scheme => {
- return db("schemes").insert(scheme);
-};
-
-function update(data, id) {
- return db("schemes")
-  .where("id", id)
-  .update(data);
+function find() {
+  return db('schemes');
 }
+
+function findById(id) {
+  return db('schemes').where('id', id).first();
+}
+
+function findSteps(id) {
+  return db('steps')
+    .where('steps.scheme_id', id)
+    .join('schemes', 'steps.scheme_id', 'schemes.id')
+    .select(
+      'steps.id',
+      'schemes.scheme_name',
+      'steps.step_number',
+      'steps.instructions'
+    );
+}
+
+function add(scheme) {
+  return db('schemes')
+    .insert(scheme)
+    .then((scheme) => {
+      return findById(scheme[0]);
+    });
+}
+
+function addSteps(stepData) {
+  return db('steps', 'schemes').insert(stepData);
+}
+
+function update(changes, id) {
+  return db('schemes')
+    .where('id', id)
+    .first()
+    .update(changes)
+    .then(() => {
+      findById(id);
+    });
+}
+
 function remove(id) {
- return db("schemes")
-  .where("id", Number(id))
-  .del();
+  return findById(id).then((scheme) => {
+    return db('schemes')
+      .where({ id })
+      .first()
+      .del()
+      .then((scheme) => {
+        return scheme;
+      });
+  });
 }
-
-module.exports = { find, findById, findSteps, add, addStep, update, remove };
